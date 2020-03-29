@@ -1,5 +1,5 @@
 <?php
-// This file is for block_category_list for Moodle - http://moodle.org/
+// This file is part of block_category_list for Moodle - http://moodle.org/
 //
 // Category List is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  * Category list block caps.
  *
  * @package    block_category_list
- * @copyright  2016 TNG Consulting Inc. - www.tngconsulting.ca
- * @copyright  1999 onwards Martin Dougiamas (http://dougiamas.com)
+ * @copyright  2016-2020 TNG Consulting Inc. - www.tngconsulting.ca
+ * @copyright  Mark Nelson <markn@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
