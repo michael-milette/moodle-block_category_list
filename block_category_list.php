@@ -1,5 +1,5 @@
 <?php
-// This file is for block_category_list for Moodle - http://moodle.org/
+// This file is part of block_category_list for Moodle - http://moodle.org/
 //
 // Category List is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,13 +18,15 @@
  * Category list block.
  *
  * @package    block_category_list
- * @copyright  2016 TNG Consulting Inc. - www.tngconsulting.ca
+ * @copyright  2016-2020 TNG Consulting Inc. - www.tngconsulting.ca
  * @copyright  1999 onwards Martin Dougiamas (http://dougiamas.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 include_once($CFG->dirroot . '/course/lib.php');
-include_once($CFG->libdir . '/coursecatlib.php');
+if ($CFG->branch < 36) {
+    include_once($CFG->libdir . '/coursecatlib.php');
+}
 
 class block_category_list extends block_list {
     function init() {
@@ -49,7 +51,7 @@ class block_category_list extends block_list {
         $this->content->icons = array();
         $this->content->footer = '';
 
-        $icon  = '<img src="' . $OUTPUT->pix_url('i/course') . '" class="icon" alt="" />';
+        $icon = $OUTPUT->pix_icon('i/course', get_string('course'));
 
         $adminseesall = true;
         if (isset($CFG->block_category_list_adminview)) {
@@ -60,14 +62,7 @@ class block_category_list extends block_list {
 
         if (empty($CFG->disablemycourses) and isloggedin() and !isguestuser() and
           !(has_capability('moodle/course:update', context_system::instance()) and $adminseesall)) {    // Just print My Courses
-            // As this is producing navigation sort order should default to $CFG->navsortmycoursessort instead
-            // of using the default.
-            if (!empty($CFG->navsortmycoursessort)) {
-                $sortorder = 'visible DESC, ' . $CFG->navsortmycoursessort . ' ASC';
-            } else {
-                $sortorder = 'visible DESC, sortorder ASC';
-            }
-            if ($courses = enrol_get_my_courses(NULL, $sortorder)) {
+            if ($courses = enrol_get_my_courses()) {
                 foreach ($courses as $course) {
                     $coursecontext = context_course::instance($course->id);
                     $linkcss = $course->visible ? "" : " class=\"dimmed\" ";
@@ -86,7 +81,11 @@ class block_category_list extends block_list {
             }
         }
 
-        $categories = coursecat::get(0)->get_children();  // Parent = 0   ie top-level categories only
+        if ($CFG->branch >= 36) {
+            $categories = core_course_category::get(0)->get_children();  // Parent = 0   ie top-level categories only
+        } else {
+            $categories = coursecat::get(0)->get_children();  // Parent = 0   ie top-level categories only
+        }
         if ($categories) {   //Check we have categories
             if (count($categories) > 1 || (count($categories) == 1 && $DB->count_records('course') > 200)) {     // Just print top level category links
                 foreach ($categories as $category) {
@@ -142,7 +141,7 @@ class block_category_list extends block_list {
             return;
         }
 
-        $icon = '<img src="'.$OUTPUT->pix_url('i/mnethost') . '" class="icon" alt="" />';
+        $icon = $OUTPUT->pix_icon('i/mnethost', get_string('host', 'mnet'));
 
         // shortcut - the rest is only for logged in users!
         if (!isloggedin() || isguestuser()) {
@@ -181,6 +180,27 @@ class block_category_list extends block_list {
      */
     public function get_aria_role() {
         return 'navigation';
+    }
+
+    /**
+     * Return the plugin config settings for external functions.
+     *
+     * @return stdClass the configs for both the block instance and plugin
+     * @since Moodle 3.8
+     */
+    public function get_config_for_external() {
+        global $CFG;
+
+        // Return all settings for all users since it is safe (no private keys, etc..).
+        $configs = (object) [
+            'adminview' => $CFG->block_category_list_adminview,
+            'hideallcourseslink' => $CFG->block_category_list_hideallcourseslink
+        ];
+
+        return (object) [
+            'instance' => new stdClass(),
+            'plugin' => $configs,
+        ];
     }
 }
 
